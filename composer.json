@@ -1,0 +1,27 @@
+{
+  "name": "rabbitcms/translations",
+  "description": "Translations for RabbitCMS",
+  "authors": [
+    {
+      "name": "Dmytro Zhurakovskyi",
+      "email": "dmytro.zhurakovsky@gmail.com"
+    }
+  ],
+  "require": {
+    "rabbitcms/carrot": "^0.3.0"
+  },
+  "autoload": {
+    "classmap": [
+      "src/Database/Migrations"
+    ],
+    "psr-4": {
+      "RabbitCMS\\Translations\\": "./src"
+    }
+  },
+  "extra": {
+    "module": {
+      "providers": "RabbitCMS\\Translations\\TranslationsServiceProvider",
+      "system": true
+    }
+  }
+}
