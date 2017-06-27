@@ -1,6 +1,7 @@
 {
   "name": "rabbitcms/translations",
   "description": "Translations for RabbitCMS",
+  "license": "MIT",
   "authors": [
     {
       "name": "Dmytro Zhurakovskyi",
