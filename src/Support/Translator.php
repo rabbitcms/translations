@@ -86,12 +86,55 @@ class Translator extends IlluminateTranslator
             : [$locale ?: $this->translator->getLocale()];
 
         foreach ($locales as $lang) {
-            if (null !== ($line = $this->getLine($namespace, $group, $lang, $item, $replace))) {
+            $line = $this->getRecord(
+                $namespace,
+                $group,
+                $lang,
+                $item,
+                $replace,
+                function () use ($key, $replace, $locale, $fallback) {
+                    $line = $this->translator->get($key, $replace, $locale, $fallback);
+                    return $line === $key ? null : $line;
+                }
+            );
+
+            if (null !== $line) {
                 return $line;
             }
         }
 
         return $key;
+    }
+
+    /**
+     * Get the translation for a given key from the JSON translation files.
+     *
+     * @param string $key
+     * @param array $replace
+     * @param string $locale
+     *
+     * @return string
+     */
+    public function getFromJson($key, array $replace = [], $locale = null): string
+    {
+        $locale = $locale ?: $this->locale;
+
+        $this->load('*', '*', $locale);
+
+        $line = $this->getRecord('*', '*', $locale, $key, $replace, function () use ($locale, $key, $replace) {
+            $line = $this->translator->getFromJson($key, $replace, $locale);
+            return $line === $key ? null : $line;
+        });
+
+        if (! isset($line)) {
+            $fallback = $this->get($key, $replace, $locale);
+
+            if ($fallback !== $key) {
+                return $fallback;
+            }
+        }
+
+        return $this->makeReplacements($line ?: $key, $replace);
     }
 
     /**
@@ -101,24 +144,23 @@ class Translator extends IlluminateTranslator
      * @param string $group
      * @param string $locale
      * @param string $item
-     * @param array   $replace
+     * @param array $replace
+     * @param callable $default
      *
-     * @return string|array|null
+     * @return array|null|string
      */
-    protected function getLine($namespace, $group, $locale, $item, array $replace)
+    protected function getRecord($namespace, $group, $locale, $item, array $replace, callable $default)
     {
         $this->load($namespace, $group, $locale);
 
         $line = $this->loaded[$namespace][$group][$locale][$item] ?? INF;
 
-        $key = $namespace === '*' ? "{$group}.{$item}" : "{$namespace}::{$group}.{$item}";
-
         if ($line === null) {
-            $line = $this->translator->get($key, $replace, $locale);
+            $line = $default();
         }
 
         if ($line === INF) {
-            $line = $this->translator->get($key, $replace, $locale);
+            $line = $default();
             Translation::query()
                 ->firstOrCreate([
                     'locale' => $locale,
@@ -126,11 +168,11 @@ class Translator extends IlluminateTranslator
                     'group' => $group,
                     'item' => $item
                 ], [
-                    'text' => $line === $key ? null : $line
+                    'text' =>  $line
                 ]);
         }
 
-        return $line === $key ? null : $this->makeReplacements($line, $replace);
+        return $line ?  $this->makeReplacements($line, $replace) : null;
     }
 
     /**
