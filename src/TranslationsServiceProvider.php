@@ -23,8 +23,9 @@ class TranslationsServiceProvider extends ModuleProvider
         return 'translations';
     }
 
-    public function boot()
+    public function register()
     {
+        parent::registerMigrations();
         $this->app->extend('translator', function (TranslatorInterface $translator, Application $app) {
             return new Translator($translator, $app);
         });
