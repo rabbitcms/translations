@@ -277,4 +277,9 @@ class Translator extends IlluminateTranslator
     {
         $this->app->make('files')->delete($this->getCachedTranslationsPath($namespace, $group, $locale));
     }
+    
+    public function addNamespace($namespace, $hint)
+    {
+        $this->translator->addNamespace($namespace, $hint);
+    }
 }
