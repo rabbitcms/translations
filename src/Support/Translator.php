@@ -71,10 +71,10 @@ class Translator extends IlluminateTranslator
     /**
      * Get the translation for the given key.
      *
-     * @param string $key
-     * @param array $replace
+     * @param string      $key
+     * @param array       $replace
      * @param string|null $locale
-     * @param bool $fallback
+     * @param bool        $fallback
      *
      * @return string|array|null
      */
@@ -110,7 +110,7 @@ class Translator extends IlluminateTranslator
      * Get the translation for a given key from the JSON translation files.
      *
      * @param string $key
-     * @param array $replace
+     * @param array  $replace
      * @param string $locale
      *
      * @return string
@@ -126,7 +126,7 @@ class Translator extends IlluminateTranslator
             return $line === $key ? null : $line;
         });
 
-        if (! isset($line)) {
+        if (!isset($line)) {
             $fallback = $this->get($key, $replace, $locale);
 
             if ($fallback !== $key) {
@@ -140,11 +140,11 @@ class Translator extends IlluminateTranslator
     /**
      * Retrieve a language line out the database.
      *
-     * @param string $namespace
-     * @param string $group
-     * @param string $locale
-     * @param string $item
-     * @param array $replace
+     * @param string   $namespace
+     * @param string   $group
+     * @param string   $locale
+     * @param string   $item
+     * @param array    $replace
      * @param callable $default
      *
      * @return array|null|string
@@ -152,6 +152,10 @@ class Translator extends IlluminateTranslator
     protected function getRecord($namespace, $group, $locale, $item, array $replace, callable $default)
     {
         $this->load($namespace, $group, $locale);
+
+        if ($item === null) {
+            return $this->loaded[$namespace][$group][$locale] ?? [];
+        }
 
         $line = $this->loaded[$namespace][$group][$locale][$item] ?? INF;
 
@@ -161,18 +165,17 @@ class Translator extends IlluminateTranslator
 
         if ($line === INF) {
             $line = $default();
-            Translation::query()
-                ->firstOrCreate([
-                    'locale' => $locale,
-                    'namespace' => $namespace,
-                    'group' => $group,
-                    'item' => $item
-                ], [
-                    'text' =>  $line
-                ]);
+            Translation::query()->firstOrCreate([
+                'locale' => $locale,
+                'namespace' => $namespace,
+                'group' => $group,
+                'item' => $item
+            ], [
+                'text' => $line
+            ]);
         }
 
-        return $line ?  $this->makeReplacements($line, $replace) : null;
+        return $line ? $this->makeReplacements($line, $replace) : null;
     }
 
     /**
@@ -190,65 +193,88 @@ class Translator extends IlluminateTranslator
             return;
         }
 
-        if ($this->translationsAreCached($locale)) {
-            $lines = $this->loadFromCache($locale);
+        if ($this->translationsAreCached($namespace, $group, $locale)) {
+            $lines = $this->loadFromCache($namespace, $group, $locale);
         } else {
             $lines = Translation::query()
-                ->where('locale', $locale)
-                ->get()
-                ->groupBy('namespace')
-                ->transform(function (Collection $item) {
-                    return $item->groupBy('group')
-                        ->map(function (Collection $item) {
-                            return $item->groupBy('locale')
-                                ->map(function (Collection $item) {
-                                    return $item->keyBy('item')
-                                        ->map(function (Translation $translation) {
-                                            return $translation->text;
-                                        });
-                                });
-                        });
-                })
+                ->where(compact($namespace, $group, $locale))
+                ->pluck('text', 'item')
                 ->toArray();
 
-            $cache_path = dirname($this->getCachedTranslationsPath($locale));
-            if (!is_dir($cache_path)) {
-                mkdir($cache_path, 0755);
-            }
-
-            $translations = var_export($lines, true);
-            $this->app['files']->put($this->getCachedTranslationsPath($locale), "<?php\n return {$translations};\n");
+            $this->storeToCache($namespace, $group, $locale, $lines);
         }
 
-        $this->loaded = array_merge_recursive($this->loaded, $lines);
+        $this->loaded[$namespace][$group][$locale] = $lines;
     }
 
 
     /**
      * Determine if the given group has been cached.
      *
+     * @param string $namespace
+     * @param string $group
+     * @param string $locale
+     *
      * @return bool
      */
-    protected function translationsAreCached($locale): bool
+    protected function translationsAreCached(string $namespace, string $group, string $locale): bool
     {
-        return $this->app['files']->exists($this->getCachedTranslationsPath($locale));
+        return $this->app['files']->exists($this->getCachedTranslationsPath($namespace, $group, $locale));
     }
 
     /**
      * Get the path to the translations cache file.
      *
+     * @param string $namespace
+     * @param string $group
+     * @param string $locale
+     *
      * @return string
      */
-    public function getCachedTranslationsPath($locale): string
+    public function getCachedTranslationsPath(string $namespace, string $group, string $locale): string
     {
-        return "{$this->app->bootstrapPath()}/cache/{$locale}/locales.php";
+        return str_replace('//*', '', storage_path("framework/locales/{$locale}/{$namespace}/{$group}.php"));
     }
 
     /**
+     * @param string $namespace
+     * @param string $group
+     * @param string $locale
+     *
      * @return array
      */
-    protected function loadFromCache($locale): array
+    protected function loadFromCache(string $namespace, string $group, string $locale): array
     {
-        return require $this->getCachedTranslationsPath($locale);
+        return require $this->getCachedTranslationsPath($namespace, $group, $locale);
+    }
+
+    /**
+     * Store locale to cache.
+     *
+     * @param string $namespace
+     * @param string $group
+     * @param string $locale
+     * @param array  $data
+     */
+    protected function storeToCache(string $namespace, string $group, string $locale, array $data = [])
+    {
+        $files = $this->app->make('files');
+
+        $dir = dirname($path = $this->getCachedTranslationsPath($namespace, $group, $locale));
+        is_dir($dir) || $files->makeDirectory(dirname($path), 0755, true);
+        $files->put($path, "<?php\n return " . var_export($data, true) . ";\n");
+    }
+
+    /**
+     * Store locale to cache.
+     *
+     * @param string $namespace
+     * @param string $group
+     * @param string $locale
+     * @param array  $data
+     */
+    public function purgeCache(string $namespace, string $group, string $locale)
+    {
+        $this->app->make('files')->delete($this->getCachedTranslationsPath($namespace, $group, $locale));
     }
 }

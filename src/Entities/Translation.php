@@ -5,6 +5,7 @@ namespace RabbitCMS\Translations\Entities;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\App;
+use RabbitCMS\Translations\Support\Translator;
 
 /**
  * Class Translation
@@ -42,9 +43,9 @@ class Translation extends Model
     public static function boot()
     {
         static::saved(function (self $model) {
-            $translations_path = App::make('translator')->getCachedTranslationsPath($model->locale);
-            if (file_exists($translations_path)) {
-                unlink($translations_path);
+            $translator = App::make('translator');
+            if ($translator instanceof Translator) {
+                $translator->purgeCache($model->namespace, $model->group, $model->locale);
             }
         });
 
