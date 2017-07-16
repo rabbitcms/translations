@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace RabbitCMS\Translations;
 
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Translation\Translator as TranslatorInterface;
-use Illuminate\Foundation\Application;
 use RabbitCMS\Modules\ModuleProvider;
 use RabbitCMS\Translations\Support\Translator;
 
@@ -26,6 +26,7 @@ class TranslationsServiceProvider extends ModuleProvider
     public function register()
     {
         parent::registerMigrations();
+
         $this->app->extend('translator', function (TranslatorInterface $translator, Application $app) {
             return new Translator($translator, $app);
         });

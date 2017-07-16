@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace RabbitCMS\Translations\Support;
 
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Translation\Translator as TranslatorContract;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Foundation\Application;
-use RabbitCMS\Translations\Entities\Translation;
+use Illuminate\Support\Arr;
 use Illuminate\Translation\Translator as IlluminateTranslator;
+use RabbitCMS\Translations\Entities\Translation;
 
 /**
  * Class Translator
@@ -157,7 +157,7 @@ class Translator extends IlluminateTranslator
             return $this->loaded[$namespace][$group][$locale] ?? [];
         }
 
-        $line = $this->loaded[$namespace][$group][$locale][$item] ?? INF;
+        $line = Arr::get($this->loaded, "{$namespace}.{$group}.{$locale}.{$item}", INF);
 
         if ($line === null) {
             $line = $default();
@@ -171,7 +171,7 @@ class Translator extends IlluminateTranslator
                 'group' => $group,
                 'item' => $item
             ], [
-                'text' => $line
+                'text' => null
             ]);
         }
 
