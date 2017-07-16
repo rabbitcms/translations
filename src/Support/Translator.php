@@ -233,7 +233,7 @@ class Translator extends IlluminateTranslator
      */
     public function getCachedTranslationsPath(string $namespace, string $group, string $locale): string
     {
-        return str_replace('//*', '', storage_path("framework/locales/{$locale}/{$namespace}/{$group}.php"));
+        return str_replace('/*', '', storage_path("framework/locales/{$locale}/{$namespace}/{$group}.php"));
     }
 
     /**
