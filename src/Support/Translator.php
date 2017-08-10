@@ -197,7 +197,7 @@ class Translator extends IlluminateTranslator
             $lines = $this->loadFromCache($namespace, $group, $locale);
         } else {
             $lines = Translation::query()
-                ->where(compact($namespace, $group, $locale))
+                ->where(compact('namespace', 'group', 'locale'))
                 ->pluck('text', 'item')
                 ->toArray();
 
