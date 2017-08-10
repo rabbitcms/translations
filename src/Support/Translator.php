@@ -123,7 +123,7 @@ class Translator extends IlluminateTranslator
 
         $line = $this->getRecord('*', '*', $locale, $key, $replace, function () use ($locale, $key, $replace) {
             $line = $this->translator->getFromJson($key, $replace, $locale);
-            return $line === $key ? null : $line;
+            return $line === $key || is_array($line) ? null : $line;
         });
 
         if (!isset($line)) {
