@@ -126,10 +126,10 @@ class Translator extends IlluminateTranslator
             return $line === $key || is_array($line) ? null : $line;
         });
 
-        if (!isset($line)) {
+        if ($line === null) {
             $fallback = $this->get($key, $replace, $locale);
 
-            if ($fallback !== $key) {
+            if ($fallback !== $key && !is_array($fallback)) {
                 return $fallback;
             }
         }
