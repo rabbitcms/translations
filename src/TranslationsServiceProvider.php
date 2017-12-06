@@ -5,6 +5,7 @@ namespace RabbitCMS\Translations;
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Translation\Translator as TranslatorInterface;
+use Illuminate\Support\ServiceProvider;
 use RabbitCMS\Modules\ModuleProvider;
 use RabbitCMS\Translations\Support\Translator;
 
@@ -13,20 +14,10 @@ use RabbitCMS\Translations\Support\Translator;
  *
  * @package RabbitCMS\Translations
  */
-class TranslationsServiceProvider extends ModuleProvider
+class TranslationsServiceProvider extends ServiceProvider
 {
-    /**
-     * @return string
-     */
-    protected function name(): string
+    public function register(): void
     {
-        return self::module()->getName();
-    }
-
-    public function register()
-    {
-        parent::registerMigrations();
-
         $this->app->extend('translator', function (TranslatorInterface $translator, Application $app) {
             return new Translator($translator, $app);
         });

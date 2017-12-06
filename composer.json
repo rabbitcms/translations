@@ -9,7 +9,7 @@
     }
   ],
   "require": {
-    "rabbitcms/modules": "^1.5 | ^2.0"
+    "rabbitcms/modules": "^2.0"
   },
   "autoload": {
     "classmap": [
@@ -21,8 +21,7 @@
   },
   "extra": {
     "module": {
-      "providers": "RabbitCMS\\Translations\\TranslationsServiceProvider",
-      "system": true
+      "providers": "RabbitCMS\\Translations\\TranslationsServiceProvider"
     }
   }
 }
