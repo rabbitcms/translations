@@ -9,7 +9,7 @@
     }
   ],
   "require": {
-    "rabbitcms/modules": "^1.4.4"
+    "rabbitcms/modules": "^1.5 | ^2.0"
   },
   "autoload": {
     "classmap": [

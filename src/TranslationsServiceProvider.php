@@ -20,7 +20,7 @@ class TranslationsServiceProvider extends ModuleProvider
      */
     protected function name(): string
     {
-        return 'translations';
+        return self::module()->getName();
     }
 
     public function register()
