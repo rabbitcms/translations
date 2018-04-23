@@ -41,6 +41,7 @@ class Translator extends IlluminateTranslator
      * Create a new translator instance.
      *
      * @param TranslatorContract $translator
+     * @param Application        $app
      */
     public function __construct(TranslatorContract $translator, Application $app)
     {
@@ -157,7 +158,10 @@ class Translator extends IlluminateTranslator
             return $this->loaded[$namespace][$group][$locale] ?? [];
         }
 
-        $line = Arr::get($this->loaded, "{$namespace}.{$group}.{$locale}.{$item}", INF);
+        $line = Arr::get($this->loaded, "{$namespace}.{$group}.{$locale}", INF);
+        if (\is_array($line)) {
+            $line = Arr::get($line, $item, INF);
+        }
 
         if ($line === null) {
             $line = $default();
@@ -166,12 +170,12 @@ class Translator extends IlluminateTranslator
         if ($line === INF) {
             $line = $default();
             Translation::query()->firstOrCreate([
-                'locale' => $locale,
+                'locale'    => $locale,
                 'namespace' => $namespace,
-                'group' => $group,
-                'item' => $item
+                'group'     => $group,
+                'item'      => $item,
             ], [
-                'text' => null
+                'text' => null,
             ]);
         }
 
@@ -206,7 +210,6 @@ class Translator extends IlluminateTranslator
 
         $this->loaded[$namespace][$group][$locale] = $lines;
     }
-
 
     /**
      * Determine if the given group has been cached.
@@ -277,7 +280,11 @@ class Translator extends IlluminateTranslator
     {
         $this->app->make('files')->delete($this->getCachedTranslationsPath($namespace, $group, $locale));
     }
-    
+
+    /**
+     * @param string $namespace
+     * @param string $hint
+     */
     public function addNamespace($namespace, $hint)
     {
         $this->translator->addNamespace($namespace, $hint);
